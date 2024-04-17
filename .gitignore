@@ -1,6 +1,5 @@
 *.pyc
 .ruff_cache/
-.vscode/
 .venv/
 .DS_Store
 
