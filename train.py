@@ -137,7 +137,7 @@ class NoduleAnalyzer:
         train_df_path = workspace / "dataset" / "luna23-ismi-train-set.csv"
         make_development_splits(
             train_set=pandas.read_csv(train_df_path),
-            save_path=workspace / "data" / "train_set" / "folds",
+            save_path=workspace / "dataset" / "train_set" / "folds",
         )
 
         self.train_df = pandas.read_csv(
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         experiment_id="0_segmentation",  # give your experiment a unique ID, for each run
         batch_size=4,  # increase batch size to 32 for the classification tasks
         fold=0,  # 🥚 Easter egg
-        max_epochs=100,  # set max epochs to 1000 for the classification tasks
+        max_epochs=2,  # set max epochs to 1000 for the classification tasks
         tasks=["segmentation"],  # 🥚 Easter egg
     )
     nodule_analyzer.train(model)  # 🥚 Easter egg
