@@ -2,15 +2,18 @@
 PyTorch port of DeepR sampler from Setio16
 Based on https://github.com/DIAGNijmegen/bodyct-multiview-nodule-detection/blob/30-retrain-setio16/dataloader/luna16.py
 """
+import logging
+import os
 from pathlib import Path
+
 import numpy as np
+import numpy.linalg as npl
+import pandas
+import scipy.ndimage as ndi
+import SimpleITK as sitk
 import torch
 import torch.utils.data as data
 from torch.utils.data import DataLoader
-import numpy.linalg as npl
-import scipy.ndimage as ndi
-import SimpleITK as sitk
-import logging
 
 logging.basicConfig(
     level=logging.INFO,
@@ -517,11 +520,8 @@ def make_weights_for_balanced_classes(labels):
     return np.array(weights)
 
 
-def test(workspace: Path = Path("/code/bodyct-luna23-ismi-trainer/")):
-
-    import pandas
-
-    df = pandas.read_csv(workspace / "data/luna23-ismi-train-set.csv")
+def test(workspace: Path = Path()):
+    df = pandas.read_csv(workspace / "dataset" / "luna23-ismi-train-set.csv")
     noduletypes = [NODULETYPE_MAPPING[t] for t in df.noduletype]
 
     x = np.array(make_weights_for_balanced_classes(noduletypes))
@@ -535,7 +535,7 @@ def test(workspace: Path = Path("/code/bodyct-luna23-ismi-trainer/")):
     )
 
     train_loader = get_data_loader(
-        workspace / "data/train_set",
+        workspace / "dataset" / "train_set",
         df,
         sampler=sampler,
         workers=16,
@@ -561,4 +561,4 @@ def test(workspace: Path = Path("/code/bodyct-luna23-ismi-trainer/")):
 
 if __name__ == "__main__":
 
-    test()
+    test(workspace=Path(os.environ.get("WORKSPACE_PATH")))

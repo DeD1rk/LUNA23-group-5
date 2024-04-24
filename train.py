@@ -1,16 +1,18 @@
-import pandas
-import dataloader
-import torch
-import torch.nn.functional as F
-from pathlib import Path
-from tqdm import tqdm
-import networks
-import numpy as np
+import os
 from datetime import datetime
-from sklearn.model_selection import StratifiedKFold
-import sklearn.metrics as skl_metrics
+from pathlib import Path
 from typing import List
 
+import numpy as np
+import pandas
+import sklearn.metrics as skl_metrics
+import torch
+import torch.nn.functional as F
+from sklearn.model_selection import StratifiedKFold
+from tqdm import tqdm
+
+import dataloader
+import networks
 
 logging = dataloader.logging
 
@@ -132,17 +134,17 @@ class NoduleAnalyzer:
         self.fold = fold
         self.tasks = tasks
 
-        train_df_path = workspace / "data" / "luna23-ismi-train-set.csv"
+        train_df_path = workspace / "dataset" / "luna23-ismi-train-set.csv"
         make_development_splits(
             train_set=pandas.read_csv(train_df_path),
             save_path=workspace / "data" / "train_set" / "folds",
         )
 
         self.train_df = pandas.read_csv(
-            workspace / "data" / "train_set" / "folds" / f"train{fold}.csv"
+            workspace / "dataset" / "train_set" / "folds" / f"train{fold}.csv"
         )
         self.valid_df = pandas.read_csv(
-            workspace / "data" / "train_set" / "folds" / f"valid{fold}.csv"
+            workspace / "dataset" / "train_set" / "folds" / f"valid{fold}.csv"
         )
 
     def _initialize_model(self, model):
@@ -189,7 +191,7 @@ class NoduleAnalyzer:
             sampler = None
 
         self.train_loader = dataloader.get_data_loader(
-            self.workspace / "data" / "train_set",
+            self.workspace / "dataset" / "train_set",
             self.train_df,
             sampler=sampler,
             workers=self.num_workers // 2,
@@ -202,7 +204,7 @@ class NoduleAnalyzer:
         )
 
         self.valid_loader = dataloader.get_data_loader(
-            self.workspace / "data" / "train_set",
+            self.workspace / "dataset" / "train_set",
             self.valid_df,
             workers=self.num_workers // 2,
             batch_size=self.batch_size,
@@ -401,7 +403,7 @@ class NoduleAnalyzer:
 
 if __name__ == "__main__":
 
-    workspace = Path("/code/bodyct-luna23-ismi-trainer/")
+    workspace = Path(os.environ.get("WORKSPACE_PATH", ""))
 
     def best_metric_fn(metrics):
         return metrics["segmentation"]["dice"]  # 🥚 Easter egg

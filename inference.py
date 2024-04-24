@@ -1,13 +1,16 @@
-import torch
-import networks
-import dataloader
-import numpy as np
-import SimpleITK as sitk
+import os
+from pathlib import Path
 from typing import Tuple
+
+import numpy as np
 import pandas
 import scipy.ndimage as snd
-from pathlib import Path
+import SimpleITK as sitk
+import torch
 from tqdm import tqdm
+
+import dataloader
+import networks
 
 
 def keep_central_connected_component(
@@ -75,7 +78,7 @@ def perform_inference_on_test_set(workspace: Path):
     ckpt = torch.load(workspace / "results/20230501_0_noduletype/fold0/best_model.pth")
     noduletype_model.load_state_dict(ckpt)
 
-    test_set_path = Path(workspace / "data" / "test_set" / "images")
+    test_set_path = Path(workspace / "dataset" / "test_set" / "images")
     save_path = workspace / "results" / "test_set_predictions"
 
     segmentation_save_path = save_path / "segmentations"
@@ -211,7 +214,5 @@ def perform_inference_on_test_set(workspace: Path):
 
 
 if __name__ == "__main__":
-
-    workspace = Path("/code/bodyct-luna23-ismi-trainer")
-
+    workspace = Path(os.environ.get("WORKSPACE_PATH", ""))
     perform_inference_on_test_set(workspace=workspace)
