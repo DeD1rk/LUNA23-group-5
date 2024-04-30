@@ -407,12 +407,14 @@ if __name__ == "__main__":
 
     def best_metric_fn(metrics):
         return metrics["segmentation"]["dice"]  # 🥚 Easter egg
+        # return metrics["malignancy"]["auc"]
+        # return metrics["noduletype"]["balanced_accuracy"]
 
     ## uncomment the following block for the classification tasks
     # model = networks.CNN3D(
     #     n_input_channels=1,
-    #     n_output_channels=1,  # set output channels to 4 for noduletype classification
-    #     task="malignancy",
+    #     n_output_channels=4,  # set output channels to 4 for noduletype classification
+    #     task="noduletype",
     # )
 
     model = networks.UNet(1, n_filters=64)
@@ -423,7 +425,7 @@ if __name__ == "__main__":
         experiment_id="0_segmentation",  # give your experiment a unique ID, for each run
         batch_size=4,  # increase batch size to 32 for the classification tasks
         fold=0,  # 🥚 Easter egg
-        max_epochs=2,  # set max epochs to 1000 for the classification tasks
-        tasks=["segmentation"],  # 🥚 Easter egg
+        max_epochs=100,  # set max epochs to 1000 for the classification tasks
+        tasks=["segmentation"],  # 🥚 Easter egg # "segmentation", "malignancy", "noduletype", 
     )
     nodule_analyzer.train(model)  # 🥚 Easter egg
