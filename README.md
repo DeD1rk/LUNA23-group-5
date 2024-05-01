@@ -9,7 +9,9 @@ They only did malignancy prediction. They used 9 2D slices and an existing 3D mo
 
 3. https://www.sciencedirect.com/science/article/pii/S1746809422002233#s0020
 "Benign-malignant classification of pulmonary nodule with deep feature optimization framework"
-Utilizing a deep feature optimization framework DFOF to enhance bening-malignant classification. This is achieved by spliting the network in 2 streams. One searching for intranodular and perinodular features and the other for revealing intranodular information.  
+Utilizing a deep feature optimization framework DFOF to enhance bening-malignant classification. This is achieved by spliting the network in 2 streams. One searching for intranodular and perinodular features and the other for revealing intranodular information.
+
+4. https://www.sciencedirect.com/science/article/pii/S0895611121000343#sec0010 " On the performance of lung nodule detection, segmentation and classification" (2021). Gives a review of many algortihms and their accuracies. Small thing about multi task learning and that it is effective. Probs mostly relevant for when we are writing the paper. 
 
 
 https://github.com/hassony2/kinetics_i3d_pytorch
