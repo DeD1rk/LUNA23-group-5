@@ -36,6 +36,7 @@ class LUNADataset(Dataset):
         data_dir: Path,
         fold: int = 0,
         validation: bool = False,
+        max_rotation_degrees: float = 20,
     ):
         """Create an instance of the dataset.
 
@@ -46,6 +47,12 @@ class LUNADataset(Dataset):
         self.data_dir = data_dir
         self.fold = fold
         self.validation = validation
+
+        self.rotations = (
+            [(-max_rotation_degrees, max_rotation_degrees)] * 3
+            if max_rotation_degrees > 0
+            else None
+        )
 
         df_path = (
             self.data_dir / "folds" / f"{'valid' if validation else 'train'}{fold}.csv"
@@ -91,7 +98,6 @@ class LUNADataset(Dataset):
         segmentation_label = self._raw_segmentation_labels[index]
         metadata = self._metadata[index]
 
-        # TODO: enable rotations again.
         # TODO: enable translations again.
         # TODO: try enabling mirroring.
 
@@ -109,7 +115,7 @@ class LUNADataset(Dataset):
             mask=segmentation_label,
             output_shape=PATCH_SIZE,
             voxel_spacing=PATCH_VOXEL_SPACING,
-            # rotations=rotations,
+            rotations=self.rotations,
             # translations=translations,
             coord_space_world=False,
         )

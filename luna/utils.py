@@ -1,4 +1,3 @@
-from itertools import permutations
 from pathlib import Path
 
 import numpy as np
@@ -12,11 +11,11 @@ from luna.constants import PATCH_SIZE, PATCH_VOXEL_SPACING
 
 
 def make_development_splits(data_dir: Path, n_folds: int = 5):
-    """Split the training set into folds at a patient-level. """
+    """Split the training set into folds at a patient-level."""
     np.random.seed(2023)
 
     train_set = pd.read_csv(data_dir / "luna23-ismi-train-set.csv")
-    
+
     save_path = data_dir / "folds"
     save_path.mkdir(exist_ok=True, parents=True)
 
@@ -32,7 +31,6 @@ def make_development_splits(data_dir: Path, n_folds: int = 5):
     folds_missing = False
 
     for fold in range(n_folds):
-
         train_pd = save_path / f"train{fold}.csv"
         valid_pd = save_path / f"valid{fold}.csv"
 
@@ -43,11 +41,9 @@ def make_development_splits(data_dir: Path, n_folds: int = 5):
             folds_missing = True
 
     if folds_missing:
-
         print(f"Making {n_folds} folds from the train set")
 
         for fold, (train_index, test_index) in enumerate(skf.split(pids, labs)):
-
             train_pids, valid_pids = pids[train_index], pids[test_index]
 
             train_pd = train_set[train_set.patientid.isin(train_pids)]
@@ -58,6 +54,7 @@ def make_development_splits(data_dir: Path, n_folds: int = 5):
 
             train_pd.to_csv(save_path / f"train{fold}.csv", index=False)
             valid_pd.to_csv(save_path / f"valid{fold}.csv", index=False)
+
 
 def _calculateAllPermutations(itemList):
     if len(itemList) == 1:
@@ -261,13 +258,11 @@ def extract_patch(
     transformMatrixAug=np.eye(3),
     offset=np.array([0, 0, 0]),
 ) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
-
     transform_matrix = np.eye(3)
 
     # compute rotation matrices
 
     if rotations is not None:
-
         (zmin, zmax), (ymin, ymax), (xmin, xmax) = rotations
 
         # add random rotation
