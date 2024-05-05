@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 import click
@@ -19,8 +20,20 @@ from .training import Trainer
     required=True,
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
-def train(data_dir: str, epochs=100, exp_id: str | None = None, fold=0):
-    trainer = Trainer(Path(data_dir), fold=fold, epochs=epochs)
+@click.option(
+    "--results-dir",
+    envvar="RESULTS_DIR",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+def train(
+    data_dir: Path, results_dir: Path, epochs=100, exp_id: str | None = None, fold=0
+):
+    date = datetime.now().strftime("%Y%m%d_%H%M")
+    save_dir = results_dir / f"{date}_{exp_id or 'default'}" / f"fold{fold}"
+    save_dir.mkdir(exist_ok=True, parents=True)
+
+    trainer = Trainer(data_dir, save_dir, fold=fold, epochs=epochs)
     trainer.train()
 
 

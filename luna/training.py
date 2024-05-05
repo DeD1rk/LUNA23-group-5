@@ -1,9 +1,15 @@
+from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
+import pandas
+import sklearn.metrics as skl_metrics
 import torch
 from torch.nn.functional import binary_cross_entropy, cross_entropy
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
+from tqdm import tqdm
 
 from .constants import NODULETYPE_MAPPING
 from .dataset import LUNADataset, get_balancing_weights
@@ -35,20 +41,22 @@ class Trainer:
     def __init__(
         self,
         data_dir: Path,
+        save_dir: Path,
         fold: int = 0,
         epochs: int = 100,
         batch_size: int = 8,
     ):
         self.data_dir = data_dir
+        self.save_dir = save_dir
         self.fold = fold
         self.epochs = epochs
         self.batch_size = batch_size
 
         torch.backends.cudnn.benchmark = True
-        self.device = torch.device("cuda:0")
+        # self.device = torch.device("cuda:0")
 
         # For testing locally when no GPU is available:
-        # self.device = torch.device("cpu:0")
+        self.device = torch.device("cpu:0")
 
         self.model = Model().to(self.device)
         self.optimizer = torch.optim.Adam(
@@ -95,8 +103,6 @@ class Trainer:
 
         outputs = self.model(images)
 
-        # TODO: numpyify and move to cpu whatever is needed
-
         losses = {
             "segmentation": dice_loss(outputs["segmentation"], labels["segmentation"]),
             "noduletype": cross_entropy(outputs["noduletype"], labels["noduletype"]),
@@ -107,40 +113,115 @@ class Trainer:
 
         losses["total"] = sum(losses.values())
 
+        outputs = {
+            "segmentation": outputs["segmentation"].detach().cpu().numpy(),
+            "noduletype": outputs["noduletype"].detach().cpu().numpy(),
+            "malignancy": outputs["malignancy"].detach().cpu().numpy(),
+        }
+
         return outputs, labels, losses
 
     def train_epoch(self):
         self.model.train()
+        losses = defaultdict(list)
+        predictions = defaultdict(list)
+        labels = defaultdict(list)
 
-        # TODO: logging, tqdm and keeping metrics
-        for batch in self.dataloader_train:
+        for batch in tqdm(self.dataloader_train, desc="Training"):
             self.optimizer.zero_grad()
-            batch_predictions, batch_labels, batch_losses = self.call_model(batch)
+            batch_predictions, batch_labels, batch_loss = self.call_model(batch)
 
-            batch_losses["total"].backward()
+            # Store the predictions, labels and losses to later aggregate them.
+            for loss, value in batch_loss.items():
+                losses[loss].append(value.item())
+            for task, value in batch_predictions.items():
+                predictions[task].extend(value)
+            for task, value in batch_labels.items():
+                labels[task].extend(value)
+
+            batch_loss["total"].backward()
             self.optimizer.step()
         self.optimizer.zero_grad()
 
-        # TODO: return metrics
+        return {
+            "loss_segmentation": np.mean(losses["segmentation"]),
+            "loss_noduletype": np.mean(losses["noduletype"]),
+            "loss_malignancy": np.mean(losses["malignancy"]),
+            "loss_total": np.mean(losses["total"]),
+            "malignancy_auc": skl_metrics.roc_auc_score(
+                np.array(labels["malignancy"]), np.array(predictions["malignancy"])
+            ),
+            "noduletype_balanced_accuracy": skl_metrics.balanced_accuracy_score(
+                labels["noduletype"], [p.argmax() for p in predictions["noduletype"]]
+            ),
+            "segmentation_dice": 1 - np.mean(losses["segmentation"]),
+        }
 
     def validation(self):
         self.model.eval()
-        losses = {
-            "total": 0,
-            "segmentation": 0,
-            "noduletype": 0,
-            "malignancy": 0,
+        losses = defaultdict(list)
+        predictions = defaultdict(list)
+        labels = defaultdict(list)
+
+        with torch.no_grad():
+            for batch in tqdm(self.dataloader_valid, desc="Validation"):
+                batch_predictions, batch_labels, batch_loss = self.call_model(batch)
+
+                # Store the predictions, labels and losses to later aggregate them.
+                for loss, value in batch_loss.items():
+                    losses[loss].append(value.item())
+                for task, value in batch_predictions.items():
+                    predictions[task].extend(value)
+                for task, value in batch_labels.items():
+                    labels[task].extend(value)
+
+        return {
+            "loss_segmentation": np.mean(losses["segmentation"]),
+            "loss_noduletype": np.mean(losses["noduletype"]),
+            "loss_malignancy": np.mean(losses["malignancy"]),
+            "loss_total": np.mean(losses["total"]),
+            "malignancy_auc": skl_metrics.roc_auc_score(
+                labels["malignancy"], predictions["malignancy"]
+            ),
+            "noduletype_balanced_accuracy": skl_metrics.balanced_accuracy_score(
+                labels["noduletype"],
+                [p.argmax() for p in predictions["noduletype"]],
+            ),
+            "segmentation_dice": 1 - np.mean(losses["segmentation"]),
         }
 
-        # TODO: logging, tqdm and keeping metrics
-        with torch.no_grad():
-            for batch in self.dataloader_valid:
-                batch_predictions, batch_labels, batch_losses = self.call_model(batch)
-                for loss, value in batch_losses.items():
-                    losses[loss] += value
-
     def train(self):
-        # TODO: logging, keeping metrics and saving best model.
+        metrics = {"train": [], "valid": []}
+        best_metric = 1e9
+        best_epoch = 0
+
         for epoch in range(self.epochs):
-            self.train_epoch()
-            self.validation()
+            print(f"\n\n===== Epoch {epoch + 1} / {self.epochs} =====\n")
+
+            epoch_train_metrics = self.train_epoch()
+            metrics["train"].append(epoch_train_metrics)
+
+            # display_metrics = pandas.DataFrame(epoch_train_metrics).round(3)
+            # display_metrics.replace(np.nan, "", inplace=True)
+            # print(display_metrics.to_markdown(tablefmt="grid"))
+            print(epoch_train_metrics)
+
+            epoch_valid_metrics = self.validation()
+            metrics["valid"].append(epoch_valid_metrics)
+
+            # display_metrics = pandas.DataFrame(epoch_valid_metrics).round(3)
+            # display_metrics.replace(np.nan, "", inplace=True)
+            # print(display_metrics.to_markdown(tablefmt="grid"))
+            print(epoch_valid_metrics)
+
+            if epoch_valid_metrics["loss_total"] < best_metric:
+                print("\n===== Saving best model! =====\n")
+                best_metric = epoch_valid_metrics["loss_total"]
+                best_epoch = epoch
+
+                torch.save(self.model.state_dict(), self.save_dir / "best_model.pth")
+                np.save(self.save_dir / "best_metrics.npy", epoch_valid_metrics)
+            else:
+                print(f"Model has not improved since epoch {best_epoch + 1}")
+
+            np.save(self.save_dir / "metrics.npy", metrics)
