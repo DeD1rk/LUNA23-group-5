@@ -4,9 +4,10 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=18
 #SBATCH --gpus=1
-#SBATCH --mem=64G
+#SBATCH --mem=32G
 #SBATCH --time=3:00:00
 #SBATCH --gpus-per-node=1
+#SBATCH --output=/home/danne/slurm_output/%j.out
 
 # Load modules
 module load 2023
