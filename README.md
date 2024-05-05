@@ -16,3 +16,9 @@ Utilizing a deep feature optimization framework DFOF to enhance bening-malignant
 
 https://github.com/hassony2/kinetics_i3d_pytorch
 aformentioned 3D model used in the 2nd paper
+
+Multi task learning papers:
+
+1. https://github.com/uci-cbcl/NoduleNet,https://link.springer.com/chapter/10.1007/978-3-030-32226-7_30 . "First, because of the mismatched goals of localization and classification, it may be sub-optimal if these two tasks are performed using the same feature map. Second, a large receptive field may integrate irrelevant information from other parts of the image, which may negatively affect and confuse the classification of nodules, especially small ones." Made a MTL and describe their choices, code for the network can be found at the github.
+2. https://github.com/CaptainWilliam/MTMR-NET, https://ieeexplore.ieee.org/document/8794587 (hiervan lukt t me om een of andere reden niet de paper daadwerkelijk te openen), maar wel code van een MLT i guess
+ 
