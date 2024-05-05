@@ -24,7 +24,7 @@ from .training import Trainer
     "--results-dir",
     envvar="RESULTS_DIR",
     required=True,
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    type=click.Path(exists=False, file_okay=False, path_type=Path),
 )
 def train(
     data_dir: Path, results_dir: Path, epochs=100, exp_id: str | None = None, fold=0

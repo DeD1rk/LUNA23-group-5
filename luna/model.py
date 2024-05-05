@@ -19,7 +19,7 @@ class Model(torch.nn.Module):
         # Return a dictionary with the outputs for each task.
         return {
             # Placeholders with correct shapes.
-            "segmentation": torch.zeros((x.shape[0],) + PATCH_SIZE),
+            "segmentation": torch.zeros((x.shape[0],) + PATCH_SIZE).to(outputs.get_device()),
             "malignancy": outputs.squeeze(),
-            "noduletype": torch.zeros(x.shape[0], 4),
+            "noduletype": torch.zeros(x.shape[0], 4).to(outputs.get_device()),
         }

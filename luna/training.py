@@ -53,10 +53,10 @@ class Trainer:
         self.batch_size = batch_size
 
         torch.backends.cudnn.benchmark = True
-        # self.device = torch.device("cuda:0")
+        self.device = torch.device("cuda:0")
 
         # For testing locally when no GPU is available:
-        self.device = torch.device("cpu:0")
+        # self.device = torch.device("cpu:0")
 
         self.model = Model().to(self.device)
         self.optimizer = torch.optim.Adam(
@@ -118,6 +118,8 @@ class Trainer:
             "noduletype": outputs["noduletype"].detach().cpu().numpy(),
             "malignancy": outputs["malignancy"].detach().cpu().numpy(),
         }
+
+        labels = {task: batch_labels.cpu() for task, batch_labels in labels.items()}
 
         return outputs, labels, losses
 
