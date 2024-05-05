@@ -1,78 +1,138 @@
-from enum import Enum
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import SimpleITK
+import SimpleITK as sitk
+import torch
+from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from .constants import (
+    HU_MAX,
+    HU_MIN,
+    INPUT_SIZE,
+    NODULETYPE_MAPPING,
+    PATCH_SIZE,
+    PATCH_VOXEL_SPACING,
+)
+from .utils import extract_patch, make_development_splits
 
-class NoduleType(Enum):
-    GroundGlassOpacity = 1
-    Calcified = 2
-    SemiSolid = 3
-    Solid = 4
 
-NODULE_TYPE_MAPPING = {
-    "GroundGlassOpacity": NoduleType.GroundGlassOpacity,
-    "Calcified": NoduleType.Calcified,
-    "SemiSolid": NoduleType.SemiSolid,
-    "Solid": NoduleType.Solid,
-}
+def get_balancing_weights(labels) -> np.ndarray:
+    """Return sampling weights to mitigate class imbalance."""
+    _, counts = np.unique(labels, return_counts=True)
+    weights = len(labels) / counts
+    return weights[labels]
 
-def load_dataset(always_parse=False) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Parse or open the training dataset as several numpy arrays.
 
-    By default, this looks for a generated .npz file, and opens it if it exists.
-    If it does not exist, or `always_parse=True`, the full dataset is parsed
-    and saved to disk for later reuse.
+class LUNADataset(Dataset):
+    """A dataset returning center-cropped patches of nodules.
+
+    This dataset class loads all of the images into memory to avoid slow disk access.
     """
-    generated_dir = Path(f"dataset/generated")
-    generated_dataset = generated_dir / "train.npz"
-    if always_parse or not generated_dataset.exists():
-        # Parse the dataset from the original files.
-        df = pd.read_csv(Path("dataset/luna23-ismi-train-set.csv"))
-        size = len(df)
-        images = np.zeros((size, 64, 128, 128), dtype=np.float32)
-        labels_segmentation = np.zeros((size, 64, 128, 128), dtype=np.uint8)
-        labels_type = np.zeros(size, dtype=np.uint8)
-        labels_malignancy = np.zeros(size, dtype=np.uint8)
+
+    def __init__(
+        self,
+        data_dir: Path,
+        fold: int = 0,
+        validation: bool = False,
+    ):
+        """Create an instance of the dataset.
+
+        The path to the root of the dataset should be provided. Based on that,
+        the training of validation set for the provided `fold` will be loaded.
+        If no folds have been made yet, this wil also create a 5-fold split.
+        """
+        self.data_dir = data_dir
+        self.fold = fold
+        self.validation = validation
+
+        df_path = (
+            self.data_dir / "folds" / f"{'valid' if validation else 'train'}{fold}.csv"
+        )
+        if not df_path.exists():
+            make_development_splits(data_dir)
+
+        self.dataframe = pd.read_csv(df_path)
+        self._load_images()
+
+    def _load_images(self):
+        size = len(self.dataframe)
+        self._raw_images = np.zeros((size,) + INPUT_SIZE, dtype=np.float32)
+        self._raw_segmentation_labels = np.zeros((size,) + INPUT_SIZE, dtype=np.uint8)
+        self._noduletype_labels = np.zeros(size, dtype=np.uint8)
+        self._malignancy_labels = np.zeros(size, dtype=np.uint8)
+        self._metadata = []
+
         for index, row in tqdm(
-            df.iterrows(), desc="Loading training files", total=size
+            self.dataframe.iterrows(), desc="Loading training files", total=size
         ):
-            images[index] = SimpleITK.GetArrayFromImage(
-                SimpleITK.ReadImage(Path("dataset/train_set/images") / f"{row['noduleid']}.mha")
+            image = sitk.ReadImage(
+                self.data_dir / "train_set" / "images" / f"{row['noduleid']}.mha"
             )
-            labels_segmentation[index] =  SimpleITK.GetArrayFromImage(
-                SimpleITK.ReadImage(Path("dataset/train_set/labels") / f"{row['noduleid']}.mha")
-            )
-            labels_type[index], labels_malignancy[index] = (
-                NODULE_TYPE_MAPPING[row["noduletype"]].value,
-                row["malignancy"],
+            self._raw_images[index] = sitk.GetArrayFromImage(image)
+            self._noduletype_labels[index] = NODULETYPE_MAPPING[row["noduletype"]]
+            self._malignancy_labels[index] = row["malignancy"]
+            self._metadata.append(
+                {
+                    "origin": np.flip(image.GetOrigin()),
+                    "spacing": np.flip(image.GetSpacing()),
+                    "transform": np.array(np.flip(image.GetDirection())).reshape(3, 3),
+                    "shape": np.flip(image.GetSize()),
+                }
             )
 
-        # Save the parsed data.
-        generated_dir.mkdir(exist_ok=True, parents=False)
-        np.savez(
-            generated_dataset,
-            images=images,
-            labels_segmentation=labels_segmentation,
-            labels_malignancy=labels_malignancy,
-            labels_type=labels_type,
+    @classmethod
+    def _scale_intensity(cls, image):
+        return np.clip((image - HU_MIN) / (HU_MAX - HU_MIN), 0, 1)
+
+    def _extract_patch(self, index: int) -> tuple[np.ndarray, np.ndarray, dict]:
+        image = self._raw_images[index]
+        segmentation_label = self._raw_segmentation_labels[index]
+        metadata = self._metadata[index]
+
+        # TODO: enable rotations again.
+        # TODO: enable translations again.
+        # TODO: try enabling mirroring.
+
+        # translations = None
+        # if self.translations:
+        #     radius = dataframe_row.diameter_mm / 2
+        #     translations = radius if radius > 0 else None
+
+        patch, mask = extract_patch(
+            raw_image=image,
+            coord=tuple(np.array(INPUT_SIZE) // 2),
+            srcVoxelOrigin=(0, 0, 0),
+            srcWorldMatrix=metadata["transform"],
+            srcVoxelSpacing=metadata["spacing"],
+            mask=segmentation_label,
+            output_shape=PATCH_SIZE,
+            voxel_spacing=PATCH_VOXEL_SPACING,
+            # rotations=rotations,
+            # translations=translations,
+            coord_space_world=False,
         )
-    else:
-        print("Reading parsed data from saved arrays.")
-        # Load parsed data from saved numpy arrays.
-        data = np.load(generated_dataset)
-        images, labels_segmentation, labels_malignancy, labels_type = (
-            data["images"],
-            data["labels_segmentation"],
-            data["labels_malignancy"],
-            data["labels_type"],
-        )
-        data.close()
 
-    return images, labels_segmentation, labels_malignancy, labels_type
+        return self._scale_intensity(patch), mask, metadata
 
-if __name__ == "__main__":
-    load_dataset()
+    def __getitem__(self, index: int) -> dict:
+        dataframe_row = self.dataframe.iloc[index]
+        patch, mask, metadata = self._extract_patch(index)
+
+        sample = {
+            "image": torch.from_numpy(patch),
+            "segmentation_label": torch.from_numpy(mask),
+            "malignancy_label": self._malignancy_labels[index],
+            "noduletype_label": self._noduletype_labels[index],
+            "origin": torch.from_numpy(metadata["origin"].copy()),
+            "spacing": torch.from_numpy(metadata["spacing"].copy()),
+            "transform": torch.from_numpy(metadata["transform"].copy()),
+            "shape": torch.from_numpy(metadata["shape"].copy()),
+            "noduleid": dataframe_row.noduleid,
+        }
+
+        return sample
+
+    def __len__(self):
+        return len(self.dataframe)
