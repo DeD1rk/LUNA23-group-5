@@ -72,7 +72,9 @@ class LUNADataset(Dataset):
         self._metadata = []
 
         for index, row in tqdm(
-            self.dataframe.iterrows(), desc=f"Loading {"validation" if self.validation else "training"} files", total=size,
+            self.dataframe.iterrows(),
+            desc=f"Loading {'validation' if self.validation else 'training'} files",
+            total=size,
         ):
             image = sitk.ReadImage(
                 self.data_dir / "train_set" / "images" / f"{row['noduleid']}.mha"

@@ -45,12 +45,18 @@ class Trainer:
         fold: int = 0,
         epochs: int = 100,
         batch_size: int = 8,
+        task_weights: dict = {
+            "segmentation": 1.0,
+            "noduletype": 1.0,
+            "malignancy": 1.0,
+        },
     ):
         self.data_dir = data_dir
         self.save_dir = save_dir
         self.fold = fold
         self.epochs = epochs
         self.batch_size = batch_size
+        self.task_weights = task_weights.copy()
 
         torch.backends.cudnn.benchmark = True
         self.device = torch.device("cuda:0")
@@ -111,7 +117,7 @@ class Trainer:
             ),
         }
 
-        losses["total"] = sum(losses.values())
+        losses["total"] = sum([self.task_weights[task] * loss for task, loss in losses.items()])
 
         outputs = {
             "segmentation": outputs["segmentation"].detach().cpu().numpy(),
