@@ -7,7 +7,7 @@ import SimpleITK as sitk
 import torch
 from tqdm import tqdm
 
-from .constants import INPUT_SIZE, PATCH_SIZE, PATCH_VOXEL_SPACING
+from .constants import INPUT_SIZE, NODULETYPE_MAPPING, PATCH_SIZE, PATCH_VOXEL_SPACING
 from .dataset import LUNADataset
 from .model import Model
 from .utils import extract_patch, keep_central_connected_component
@@ -127,10 +127,16 @@ def perform_inference_on_test_set(data_dir: Path, result_dir: Path):
             "noduleid": noduleid,
             "malignancy": outputs["malignancy"],
             "noduletype": outputs["noduletype"].argmax(),
-            "ggo_probability": outputs["noduletype"][0],
-            "partsolid_probability": outputs["noduletype"][1],
-            "solid_probability": outputs["noduletype"][2],
-            "calcified_probability": outputs["noduletype"][3],
+            "ggo_probability": outputs["noduletype"][
+                NODULETYPE_MAPPING["GroundGlassOpacity"]
+            ],
+            "partsolid_probability": outputs["noduletype"][
+                NODULETYPE_MAPPING["SemiSolid"]
+            ],
+            "solid_probability": outputs["noduletype"][NODULETYPE_MAPPING["Solid"]],
+            "calcified_probability": outputs["noduletype"][
+                NODULETYPE_MAPPING["Calcified"]
+            ],
         }
 
         predictions.append(pandas.Series(prediction))

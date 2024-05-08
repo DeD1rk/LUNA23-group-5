@@ -1,8 +1,8 @@
 NODULETYPE_MAPPING = {
     "GroundGlassOpacity": 0,
-    "Calcified": 1,
-    "SemiSolid": 2,
-    "Solid": 3,
+    "SemiSolid": 1,
+    "Solid": 2,
+    "Calcified": 3,
 }
 
 HU_MIN, HU_MAX = -1000, 400
