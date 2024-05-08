@@ -1,9 +1,8 @@
+import json
 from collections import defaultdict
-from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
-import pandas
 import sklearn.metrics as skl_metrics
 import torch
 from torch.nn.functional import binary_cross_entropy, cross_entropy
@@ -117,7 +116,9 @@ class Trainer:
             ),
         }
 
-        losses["total"] = sum([self.task_weights[task] * loss for task, loss in losses.items()])
+        losses["total"] = sum(
+            [self.task_weights[task] * loss for task, loss in losses.items()]
+        )
 
         outputs = {
             "segmentation": outputs["segmentation"].detach().cpu().numpy(),
@@ -229,6 +230,9 @@ class Trainer:
 
                 torch.save(self.model.state_dict(), self.save_dir / "best_model.pth")
                 np.save(self.save_dir / "best_metrics.npy", epoch_valid_metrics)
+                with open(self.save_dir / "best_metrics.json", "w") as f:
+                    json.dump(epoch_valid_metrics, f, indent=4)
+
             else:
                 print(f"Model has not improved since epoch {best_epoch + 1}")
 

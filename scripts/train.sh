@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=18
 #SBATCH --gpus=1
 #SBATCH --partition=gpu
-#SBATCH --time=00:20:00
+#SBATCH --time=03:00:00
 #SBATCH --mem=32G
 #SBATCH --output=/home/danne/slurm_output/%j.out
 
@@ -28,10 +28,12 @@ python -u -m luna train \
     --data-dir=$TMPDIR/dataset \
     --results-dir=$TMPDIR/results \
     --batch-size=8 \
-    --epochs=3 \
+    --epochs=100 \
+    --fold=1 \
     --segmentation-weight=4.0 \
     --noduletype-weight=1.0 \
-    --malignancy-weight=1.0 \
+    --malignancy-weight=2.0 \
+    --exp-id="w411" \
     --perform-inference
 
 cp -r $TMPDIR/results/* $HOME/results/
