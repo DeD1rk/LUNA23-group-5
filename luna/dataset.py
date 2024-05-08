@@ -79,7 +79,12 @@ class LUNADataset(Dataset):
             image = sitk.ReadImage(
                 self.data_dir / "train_set" / "images" / f"{row['noduleid']}.mha"
             )
+            segmentation = sitk.ReadImage(
+                self.data_dir / "train_set" / "labels" / f"{row['noduleid']}.mha"
+            )
             self._raw_images[index] = sitk.GetArrayFromImage(image)
+            self._raw_segmentation_labels[index] = sitk.GetArrayFromImage(segmentation)
+
             self._noduletype_labels[index] = NODULETYPE_MAPPING[row["noduletype"]]
             self._malignancy_labels[index] = row["malignancy"]
             self._metadata.append(
