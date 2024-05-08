@@ -92,7 +92,7 @@ class LUNADataset(Dataset):
             )
 
     @classmethod
-    def _scale_intensity(cls, image):
+    def scale_intensity(cls, image):
         return np.clip((image - HU_MIN) / (HU_MAX - HU_MIN), 0, 1)
 
     def _extract_patch(self, index: int) -> tuple[np.ndarray, np.ndarray, dict]:
@@ -122,7 +122,7 @@ class LUNADataset(Dataset):
             coord_space_world=False,
         )
 
-        return self._scale_intensity(patch), mask, metadata
+        return self.scale_intensity(patch), mask, metadata
 
     def __getitem__(self, index: int) -> dict:
         dataframe_row = self.dataframe.iloc[index]

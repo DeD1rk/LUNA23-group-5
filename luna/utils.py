@@ -4,10 +4,11 @@ import numpy as np
 import numpy.linalg as npl
 import pandas as pd
 import scipy.ndimage as ndi
+import SimpleITK as sitk
 import torch
 from sklearn.model_selection import StratifiedKFold
 
-from luna.constants import PATCH_SIZE, PATCH_VOXEL_SPACING
+from .constants import PATCH_SIZE, PATCH_VOXEL_SPACING
 
 
 def make_development_splits(data_dir: Path, n_folds: int = 5):
@@ -339,3 +340,43 @@ def extract_patch(
 
     else:
         return patch
+
+
+def keep_central_connected_component(
+    prediction: sitk.Image,
+) -> sitk.Image:
+    """Function to post-process the prediction to keep only the central connected component in a patch
+
+    Args:
+        prediction (sitk.Image): prediction file (should be binary)
+        patch_size (np.array, optional): patch size (x, y, z) to ensure the center is computed appropriately.
+
+    Returns:
+        sitk.Image: post-processed binary file with only the central connected component
+    """
+
+    origin = prediction.GetOrigin()
+    spacing = prediction.GetSpacing()
+    direction = prediction.GetDirection()
+
+    prediction = sitk.GetArrayFromImage(prediction)
+
+    c, n = ndi.label(prediction)
+    centroids = np.array(
+        [np.array(np.where(c == i)).mean(axis=1) for i in range(1, n + 1)]
+    ).astype(int)
+
+    patch_size = np.array(list(reversed(PATCH_SIZE)))
+
+    if len(centroids) > 0:
+        dists = np.sqrt(((centroids - patch_size // 2) ** 2).sum(axis=1))
+        keep_idx = np.argmin(dists)
+        output = np.zeros(c.shape)
+        output[c == (keep_idx + 1)] = 1
+        prediction = output.astype(np.uint8)
+
+    prediction = sitk.GetImageFromArray(prediction)
+    prediction.SetSpacing(spacing)
+    prediction.SetOrigin(origin)
+    prediction.SetDirection(direction)
+    return prediction

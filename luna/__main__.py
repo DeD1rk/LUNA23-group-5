@@ -1,8 +1,10 @@
+import shutil
 from datetime import datetime
 from pathlib import Path
 
 import click
 
+from .inference import perform_inference_on_test_set
 from .training import Trainer
 
 
@@ -48,6 +50,11 @@ from .training import Trainer
     type=click.FloatRange(min=0),
     default=1.0,
 )
+@click.option(
+    "--perform-inference/--no-perform-inference",
+    default=False,
+    type=bool,
+)
 def train(
     data_dir: Path,
     results_dir: Path,
@@ -58,9 +65,10 @@ def train(
     segmentation_weight: float = 1.0,
     noduletype_weight: float = 1.0,
     malignancy_weight: float = 1.0,
+    perform_inference: bool = False,
 ):
     date = datetime.now().strftime("%Y%m%d_%H%M")
-    save_dir = results_dir / f"{date}_{exp_id or 'default'}" / f"fold{fold}"
+    save_dir = results_dir / f"{date}_{exp_id or 'default'}_fold{fold}"
     save_dir.mkdir(exist_ok=True, parents=True)
 
     trainer = Trainer(
@@ -77,6 +85,35 @@ def train(
     )
     trainer.train()
 
+    if perform_inference:
+        perform_inference_on_test_set(data_dir, save_dir)
+        shutil.make_archive(
+            save_dir / "predictions", "zip", save_dir / "test_set_predictions"
+        )
+
+
+@click.command()
+@click.option(
+    "--data-dir",
+    envvar="DATA_DIR",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--result-dir",
+    envvar="RESULT_DIR",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+def inference(
+    data_dir: Path,
+    result_dir: Path,
+):
+    perform_inference_on_test_set(data_dir, result_dir)
+    shutil.make_archive(
+        result_dir / "predictions.zip", "zip", result_dir / "test_set_predictions"
+    )
+
 
 @click.group()
 def cli():
@@ -84,6 +121,7 @@ def cli():
 
 
 cli.add_command(train)
+cli.add_command(inference)
 
 if __name__ == "__main__":
     cli()
