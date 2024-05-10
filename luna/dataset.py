@@ -36,7 +36,8 @@ class LUNADataset(Dataset):
         data_dir: Path,
         fold: int = 0,
         validation: bool = False,
-        max_rotation_degrees: float = 20,
+        max_rotation_degrees: float = 0,
+        enable_translations: bool = False,
     ):
         """Create an instance of the dataset.
 
@@ -48,6 +49,7 @@ class LUNADataset(Dataset):
         self.fold = fold
         self.validation = validation
 
+        self.enable_translations = enable_translations
         self.rotations = (
             [(-max_rotation_degrees, max_rotation_degrees)] * 3
             if max_rotation_degrees > 0
@@ -104,14 +106,15 @@ class LUNADataset(Dataset):
         image = self._raw_images[index]
         segmentation_label = self._raw_segmentation_labels[index]
         metadata = self._metadata[index]
+        dataframe_row = self.dataframe.iloc[index]
 
-        # TODO: enable translations again.
         # TODO: try enabling mirroring.
 
-        # translations = None
-        # if self.translations:
-        #     radius = dataframe_row.diameter_mm / 2
-        #     translations = radius if radius > 0 else None
+        if self.enable_translations:
+            # A random translation within a sphere will be applied.
+            # Pick the radius based on the (known) radius of the nodule.
+            radius = dataframe_row.diameter_mm / 2
+            translations = radius if radius > 0 else None
 
         patch, mask = extract_patch(
             raw_image=image,
@@ -123,7 +126,7 @@ class LUNADataset(Dataset):
             output_shape=PATCH_SIZE,
             voxel_spacing=PATCH_VOXEL_SPACING,
             rotations=self.rotations,
-            # translations=translations,
+            translations=translations,
             coord_space_world=False,
         )
 

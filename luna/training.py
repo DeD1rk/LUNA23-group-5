@@ -68,8 +68,12 @@ class Trainer:
             self.model.parameters(),
         )
 
-        dataset_train = LUNADataset(self.data_dir, fold=self.fold)
-        dataset_valid = LUNADataset(self.data_dir, fold=self.fold, validation=True)
+        dataset_train = LUNADataset(self.data_dir, fold=self.fold, max_rotation_degrees=20, enable_translations=)
+        dataset_valid = LUNADataset(
+            self.data_dir,
+            fold=self.fold,
+            validation=True,
+        )
 
         sampler = WeightedRandomSampler(
             torch.DoubleTensor(
