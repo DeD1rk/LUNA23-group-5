@@ -255,35 +255,45 @@ def extract_patch(
     voxel_spacing=PATCH_VOXEL_SPACING,
     rotations=None,
     translations=None,
+    mirrorings=None,
     coord_space_world=False,
-    transformMatrixAug=np.eye(3),
     offset=np.array([0, 0, 0]),
 ) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
+    # Start with the identity linear transformation matrix.
     transform_matrix = np.eye(3)
 
-    # compute rotation matrices
-
+    # Apply random rotation matrix.
     if rotations is not None:
         (zmin, zmax), (ymin, ymax), (xmin, xmax) = rotations
 
-        # add random rotation
+        # Determine rotation angles.
         angleX = np.multiply(np.pi / 180.0, np.random.randint(xmin, xmax, 1))[0]
         angleY = np.multiply(np.pi / 180.0, np.random.randint(ymin, ymax, 1))[0]
         angleZ = np.multiply(np.pi / 180.0, np.random.randint(zmin, zmax, 1))[0]
 
-        transformMatrixAug = np.eye(3)
-        transformMatrixAug = np.dot(
-            transformMatrixAug, rotateMatrixX(np.cos(angleX), np.sin(angleX))
+        # Multiply rotation matrices for each axis.
+        rotation_matrix = np.eye(3)
+        rotation_matrix = np.dot(
+            rotation_matrix, rotateMatrixX(np.cos(angleX), np.sin(angleX))
         )
-        transformMatrixAug = np.dot(
-            transformMatrixAug, rotateMatrixY(np.cos(angleY), np.sin(angleY))
+        rotation_matrix = np.dot(
+            rotation_matrix, rotateMatrixY(np.cos(angleY), np.sin(angleY))
         )
-        transformMatrixAug = np.dot(
-            transformMatrixAug, rotateMatrixZ(np.cos(angleZ), np.sin(angleZ))
+        rotation_matrix = np.dot(
+            rotation_matrix, rotateMatrixZ(np.cos(angleZ), np.sin(angleZ))
         )
 
-    # multiply rotation matrices
-    transform_matrix = np.dot(transform_matrix, transformMatrixAug)
+        # Apply rotation matrix.
+        transform_matrix = np.dot(transform_matrix, rotation_matrix)
+
+    # Apply random mirroring matrix.
+    if mirrorings is not None:
+        mirroring_matrix = np.eye(3)
+        for axis in range(3):
+            if mirrorings[axis] and np.random.random() > 0.5:
+                mirroring_matrix[axis, axis] = -1
+
+        transform_matrix = np.dot(transform_matrix, mirroring_matrix)
 
     # compute random translation
     if translations is not None:

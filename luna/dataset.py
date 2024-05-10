@@ -38,19 +38,30 @@ class LUNADataset(Dataset):
         validation: bool = False,
         max_rotation_degrees: float = 0,
         enable_translations: bool = False,
+        enable_mirroring: tuple[bool, bool, bool] = (False, False, False),
     ):
         """Create an instance of the dataset.
 
         The path to the root of the dataset should be provided. Based on that,
         the training of validation set for the provided `fold` will be loaded.
         If no folds have been made yet, this wil also create a 5-fold split.
+
+        The keyword arguments `max_rotation_degrees`, `enable_translations` and
+        `enable_mirroring` can be used to control data augmentation in the training
+        dataset. If `max_rotation_degrees` is set to a value greater than 0, random
+        rotations will be applied in each axis. If `enable_translations` is True,
+        the nodule will be randomly translated within a sphere with a radius equal
+        to the nodule's diameter. `enable_mirroring` is a tuple of three booleans, each
+        for enabling mirroring along the z (head-toe), y (front-back) and x (left-right)
+        axis respectively.
         """
         self.data_dir = data_dir
         self.fold = fold
         self.validation = validation
 
         self.enable_translations = enable_translations
-        self.rotations = (
+        self.enable_mirroring = enable_mirroring  # Mirroring flag for each axis.
+        self.rotations = (  # Rotation range for each axis.
             [(-max_rotation_degrees, max_rotation_degrees)] * 3
             if max_rotation_degrees > 0
             else None
@@ -108,8 +119,7 @@ class LUNADataset(Dataset):
         metadata = self._metadata[index]
         dataframe_row = self.dataframe.iloc[index]
 
-        # TODO: try enabling mirroring.
-
+        translations = None
         if self.enable_translations:
             # A random translation within a sphere will be applied.
             # Pick the radius based on the (known) radius of the nodule.
@@ -127,6 +137,7 @@ class LUNADataset(Dataset):
             voxel_spacing=PATCH_VOXEL_SPACING,
             rotations=self.rotations,
             translations=translations,
+            mirrorings=self.enable_mirroring,
             coord_space_world=False,
         )
 

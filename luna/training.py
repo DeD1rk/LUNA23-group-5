@@ -49,6 +49,7 @@ class Trainer:
             "noduletype": 1.0,
             "malignancy": 1.0,
         },
+        augmentation_mirrorings: tuple[bool, bool, bool] = (False, False, False),
     ):
         self.data_dir = data_dir
         self.save_dir = save_dir
@@ -68,7 +69,13 @@ class Trainer:
             self.model.parameters(),
         )
 
-        dataset_train = LUNADataset(self.data_dir, fold=self.fold, max_rotation_degrees=20, enable_translations=)
+        dataset_train = LUNADataset(
+            self.data_dir,
+            fold=self.fold,
+            max_rotation_degrees=20,
+            enable_translations=True,
+            enable_mirroring=augmentation_mirrorings,
+        )
         dataset_valid = LUNADataset(
             self.data_dir,
             fold=self.fold,

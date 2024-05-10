@@ -55,6 +55,24 @@ from .training import Trainer
     default=False,
     type=bool,
 )
+@click.option(
+    "--aug-mirror-x/--no-aug-mirror-x",
+    default=False,
+    type=bool,
+    help="Enable data augmentation by random mirroring along the x-axis (left-right).",
+)
+@click.option(
+    "--aug-mirror-y/--no-aug-mirror-y",
+    default=False,
+    type=bool,
+    help="Enable data augmentation by random mirroring along the y-axis (front-back).",
+)
+@click.option(
+    "--aug-mirror-z/--no-aug-mirror-z",
+    default=False,
+    type=bool,
+    help="Enable data augmentation by random mirroring along the z-axis (head-toe).",
+)
 def train(
     data_dir: Path,
     results_dir: Path,
@@ -66,6 +84,9 @@ def train(
     noduletype_weight: float = 1.0,
     malignancy_weight: float = 1.0,
     perform_inference: bool = False,
+    aug_mirror_x: bool = False,
+    aug_mirror_y: bool = False,
+    aug_mirror_z: bool = False,
 ):
     date = datetime.now().strftime("%Y%m%d_%H%M")
     save_dir = results_dir / f"{date}_{exp_id or 'default'}_fold{fold}"
@@ -82,6 +103,7 @@ def train(
             "noduletype": noduletype_weight,
             "malignancy": malignancy_weight,
         },
+        augmentation_mirrorings=(aug_mirror_z, aug_mirror_y, aug_mirror_x),
     )
     trainer.train()
 
