@@ -72,17 +72,16 @@ class Model(nn.Module):
                 ContractionBlock(16, 32, dropout=dropout, pooling=True),
                 ContractionBlock(32, 64, dropout=dropout, pooling=True),
                 ContractionBlock(64, 64, dropout=dropout, pooling=True),
-                ContractionBlock(64, 128, dropout=dropout, pooling=True),
-                ContractionBlock(128, 128, dropout=dropout, pooling=True),
-                # Output shape: (2x2x2 @ 128)
+                ContractionBlock(64, 64, dropout=dropout, pooling=True),
+                # Output shape: (4x4x4 @ 64)
             ]
         )
 
         self.decoder = nn.ModuleList(
             [
-                # Input shape: (2x2x2 @ 128)
-                ExpansionBlock(128, 128, dropout=dropout),
-                ExpansionBlock(128, 64, dropout=dropout),
+                # Input shape: (4x4x4 @ 64)
+                ExpansionBlock(64, 64, dropout=dropout),
+                ExpansionBlock(64, 64, dropout=dropout),
                 ExpansionBlock(64, 64, dropout=dropout),
                 ExpansionBlock(64, 32, dropout=dropout),
                 ExpansionBlock(32, 16, dropout=dropout),
@@ -96,8 +95,10 @@ class Model(nn.Module):
         )
 
         self.shared_classification = nn.Sequential(
+            nn.Conv3d(64, 32, 3),
+            nn.ReLU(),
             Flatten(),
-            nn.Linear(2 * 2 * 2 * 128, 128),
+            nn.Linear(4 * 4 * 4 * 16, 128),
             nn.Dropout(dropout),
             nn.ReLU(inplace=True),
         )
