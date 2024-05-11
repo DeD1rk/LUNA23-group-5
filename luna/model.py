@@ -5,7 +5,7 @@ from torch import nn
 def conv3x3(n_in, n_out, padding=1):
     return [
         nn.Conv3d(n_in, n_out, kernel_size=3, padding=padding, bias=False),
-        nn.BatchNorm3d(n_out, affine=True),
+        nn.BatchNorm3d(n_out, affine=True, track_running_stats=False),
         nn.ReLU(inplace=True),
     ]
 
@@ -33,10 +33,7 @@ class ExpansionBlock(nn.Module):
 
         self.upconv = nn.Sequential(
             nn.ConvTranspose3d(
-                n_input_channels,
-                n_filters,
-                kernel_size=2,
-                stride=2,
+                n_input_channels, n_filters, kernel_size=2, stride=2, bias=False
             ),
             nn.BatchNorm3d(n_filters, affine=True, track_running_stats=False),
             nn.ReLU(inplace=True),
@@ -68,37 +65,35 @@ class Model(nn.Module):
         self.encoder = nn.ModuleList(
             [
                 # Input shape: (64x64x64 @ 1)
-                ContractionBlock(1, 16, dropout=None, pooling=False),
-                ContractionBlock(16, 32, dropout=dropout, pooling=True),
-                ContractionBlock(32, 64, dropout=dropout, pooling=True),
+                ContractionBlock(1, 64, dropout=None, pooling=False),
                 ContractionBlock(64, 64, dropout=dropout, pooling=True),
                 ContractionBlock(64, 64, dropout=dropout, pooling=True),
-                # Output shape: (4x4x4 @ 64)
+                ContractionBlock(64, 64, dropout=dropout, pooling=True),
+                # Output shape: (8x8x8 @ 64)
             ]
         )
 
         self.decoder = nn.ModuleList(
             [
-                # Input shape: (4x4x4 @ 64)
+                # Input shape: (8x8x8 @ 64)
                 ExpansionBlock(64, 64, dropout=dropout),
                 ExpansionBlock(64, 64, dropout=dropout),
                 ExpansionBlock(64, 64, dropout=dropout),
-                ExpansionBlock(64, 32, dropout=dropout),
-                ExpansionBlock(32, 16, dropout=dropout),
-                # Output shape: (64x64x64 @ 16)
+                # Output shape: (64x64x64 @ 64)
             ]
         )
 
         self.segmentation = nn.Sequential(
-            nn.Conv3d(16, 1, kernel_size=1),
+            nn.Conv3d(64, 1, kernel_size=1),
             nn.Sigmoid(),
         )
 
         self.shared_classification = nn.Sequential(
-            nn.Conv3d(64, 32, 3),
+            nn.MaxPool3d(2),
+            nn.Conv3d(64, 32, 1),
             nn.ReLU(),
             Flatten(),
-            nn.Linear(4 * 4 * 4 * 16, 128),
+            nn.Linear(4 * 4 * 4 * 32, 128),
             nn.Dropout(dropout),
             nn.ReLU(inplace=True),
         )
