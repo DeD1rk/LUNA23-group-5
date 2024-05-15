@@ -1,0 +1,9 @@
+{
+    "loss_segmentation": 0.21271834663442662,
+    "loss_noduletype": 1.384025290205672,
+    "loss_malignancy": 0.7169284530588098,
+    "loss_total": 0.21271834663442662,
+    "malignancy_auc": 0.5631695977360016,
+    "noduletype_balanced_accuracy": 0.25,
+    "segmentation_dice": 0.7872816533655733
+}
