@@ -15,6 +15,7 @@ __pycache__/
 # datasets
 data/*_set
 dataset/*_set
+dataset-wrong/*_set
 results/
 
 # Distribution / packaging
