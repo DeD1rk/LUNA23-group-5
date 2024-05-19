@@ -13,8 +13,10 @@ from .model import Model
 from .utils import extract_patch, keep_central_connected_component
 
 
-def perform_inference_on_test_set(data_dir: Path, result_dir: Path):
-    model = Model().cuda()
+def perform_inference_on_test_set(
+    data_dir: Path, result_dir: Path, dropout: float = 0.0
+):
+    model = Model(dropout=dropout).cuda()
     model.eval()
 
     checkpoint = torch.load(result_dir / "best_model.pth")

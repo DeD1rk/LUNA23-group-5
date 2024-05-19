@@ -49,6 +49,7 @@ class Trainer:
             "noduletype": 1.0,
             "malignancy": 1.0,
         },
+        dropout: float = 0.0,
         augmentation_mirrorings: tuple[bool, bool, bool] = (False, False, False),
     ):
         self.data_dir = data_dir
@@ -64,10 +65,8 @@ class Trainer:
         # For testing locally when no GPU is available:
         # self.device = torch.device("cpu:0")
 
-        self.model = Model().to(self.device)
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(),
-        )
+        self.model = Model(dropout=dropout).to(self.device)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
 
         dataset_train = LUNADataset(
             self.data_dir,

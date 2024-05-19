@@ -33,6 +33,11 @@ from .training import Trainer
     default=8,
 )
 @click.option(
+    "--dropout",
+    type=click.FloatRange(min=0, max=1),
+    default=0.0,
+)
+@click.option(
     "--segmentation-weight",
     envvar="SEGMENTATION_WEIGHT",
     type=click.FloatRange(min=0),
@@ -76,10 +81,11 @@ from .training import Trainer
 def train(
     data_dir: Path,
     results_dir: Path,
-    epochs=100,
-    batch_size=8,
+    epochs: int = 100,
+    batch_size: int = 8,
     exp_id: str | None = None,
-    fold=0,
+    fold: int = 0,
+    dropout: float = 0.0,
     segmentation_weight: float = 1.0,
     noduletype_weight: float = 1.0,
     malignancy_weight: float = 1.0,
@@ -98,6 +104,7 @@ def train(
         fold=fold,
         epochs=epochs,
         batch_size=batch_size,
+        dropout=dropout,
         task_weights={
             "segmentation": segmentation_weight,
             "noduletype": noduletype_weight,
@@ -108,7 +115,7 @@ def train(
     trainer.train()
 
     if perform_inference:
-        perform_inference_on_test_set(data_dir, save_dir)
+        perform_inference_on_test_set(data_dir, save_dir, dropout=dropout)
         shutil.make_archive(
             save_dir / "predictions", "zip", save_dir / "test_set_predictions"
         )
@@ -127,11 +134,13 @@ def train(
     required=True,
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
-def inference(
-    data_dir: Path,
-    result_dir: Path,
-):
-    perform_inference_on_test_set(data_dir, result_dir)
+@click.option(
+    "--dropout",
+    type=click.FloatRange(min=0, max=1),
+    default=0.0,
+)
+def inference(data_dir: Path, result_dir: Path, dropout: float = 0.0):
+    perform_inference_on_test_set(data_dir, result_dir, dropout=dropout)
     shutil.make_archive(
         result_dir / "predictions.zip", "zip", result_dir / "test_set_predictions"
     )
