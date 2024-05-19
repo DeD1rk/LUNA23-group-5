@@ -78,6 +78,12 @@ from .training import Trainer
     type=bool,
     help="Enable data augmentation by random mirroring along the z-axis (head-toe).",
 )
+@click.option(
+    "--aug-noise-std",
+    default=0.0,
+    type=click.FloatRange(min=0),
+    help="Enable data augmentation with normal noise with this STD.",
+)
 def train(
     data_dir: Path,
     results_dir: Path,
@@ -93,6 +99,7 @@ def train(
     aug_mirror_x: bool = False,
     aug_mirror_y: bool = False,
     aug_mirror_z: bool = False,
+    aug_noise: float = 0,
 ):
     date = datetime.now().strftime("%Y%m%d_%H%M")
     save_dir = results_dir / f"{date}_{exp_id or 'default'}_fold{fold}"

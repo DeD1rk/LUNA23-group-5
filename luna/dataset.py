@@ -36,6 +36,7 @@ class LUNADataset(Dataset):
         data_dir: Path,
         fold: int = 0,
         validation: bool = False,
+        noise_std: float = 0,
         max_rotation_degrees: float = 0,
         enable_translations: bool = False,
         enable_mirroring: tuple[bool, bool, bool] = (False, False, False),
@@ -46,14 +47,18 @@ class LUNADataset(Dataset):
         the training of validation set for the provided `fold` will be loaded.
         If no folds have been made yet, this wil also create a 5-fold split.
 
-        The keyword arguments `max_rotation_degrees`, `enable_translations` and
-        `enable_mirroring` can be used to control data augmentation in the training
-        dataset. If `max_rotation_degrees` is set to a value greater than 0, random
-        rotations will be applied in each axis. If `enable_translations` is True,
-        the nodule will be randomly translated within a sphere with a radius equal
-        to the nodule's diameter. `enable_mirroring` is a tuple of three booleans, each
-        for enabling mirroring along the z (head-toe), y (front-back) and x (left-right)
-        axis respectively.
+        The keyword arguments `noise_std`, `max_rotation_degrees`, `enable_translations`
+        and `enable_mirroring` can be used to control data augmentation in the training
+        dataset.
+
+        If `max_rotation_degrees` is set to a value greater than 0, random
+        rotations will be applied in each axis. Similarly, if `noise_std` is set, normal
+        distributed noise is added to the patches with that standard deviation.
+
+        If `enable_translations` is True, the nodule will be randomly translated within
+        a sphere with a radius equal to the nodule's diameter. `enable_mirroring` is a
+        tuple of three booleans, each for enabling mirroring along the z (head-toe),
+        y (front-back) and x (left-right) axis respectively.
         """
         self.data_dir = data_dir
         self.fold = fold
@@ -66,6 +71,7 @@ class LUNADataset(Dataset):
             if max_rotation_degrees > 0
             else None
         )
+        self.noise_std = noise_std
 
         df_path = (
             self.data_dir / "folds" / f"{'valid' if validation else 'train'}{fold}.csv"
@@ -140,6 +146,11 @@ class LUNADataset(Dataset):
             mirrorings=self.enable_mirroring,
             coord_space_world=False,
         )
+
+        if self.noise_std:
+            patch = patch + np.random.normal(
+                loc=0, scale=self.noise_std, size=PATCH_SIZE
+            )
 
         return self.scale_intensity(patch), mask, metadata
 

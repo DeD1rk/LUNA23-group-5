@@ -51,6 +51,7 @@ class Trainer:
         },
         dropout: float = 0.0,
         augmentation_mirrorings: tuple[bool, bool, bool] = (False, False, False),
+        augmentation_noise_std: float = 0.0,
     ):
         self.data_dir = data_dir
         self.save_dir = save_dir
@@ -71,6 +72,7 @@ class Trainer:
         dataset_train = LUNADataset(
             self.data_dir,
             fold=self.fold,
+            noise_std=augmentation_noise_std,
             max_rotation_degrees=20,
             enable_translations=True,
             enable_mirroring=augmentation_mirrorings,
