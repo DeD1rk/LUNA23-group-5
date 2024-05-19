@@ -99,12 +99,14 @@ class Trainer:
             batch_size=self.batch_size,
             sampler=sampler,
             worker_init_fn=worker_init_fn,
+            num_workers=8,
         )
 
         self.dataloader_valid = DataLoader(
             dataset=dataset_valid,
             batch_size=self.batch_size,
             worker_init_fn=worker_init_fn,
+            num_workers=4,
         )
 
     def call_model(self, batch: dict):
