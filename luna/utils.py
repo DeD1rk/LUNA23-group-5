@@ -8,7 +8,7 @@ import SimpleITK as sitk
 import torch
 from sklearn.model_selection import StratifiedKFold
 
-from .constants import PATCH_SIZE, PATCH_VOXEL_SPACING
+from .constants import INPUT_SIZE, PATCH_SIZE, PATCH_VOXEL_SPACING
 
 
 def make_development_splits(data_dir: Path, n_folds: int = 5):
@@ -352,41 +352,31 @@ def extract_patch(
         return patch
 
 
-def keep_central_connected_component(
-    prediction: sitk.Image,
-) -> sitk.Image:
-    """Function to post-process the prediction to keep only the central connected component in a patch
+def keep_central_connected_component(prediction: np.ndarray) -> np.ndarray:
+    """Post-process a segmentation to keep only the most connected component."""
+    labels, n_components = ndi.label(prediction)
 
-    Args:
-        prediction (sitk.Image): prediction file (should be binary)
-        patch_size (np.array, optional): patch size (x, y, z) to ensure the center is computed appropriately.
+    image_size = np.array(prediction.shape)
+    center = (image_size - 1) / 2
 
-    Returns:
-        sitk.Image: post-processed binary file with only the central connected component
-    """
+    # Pre-calculate a matrix of Euclidean distances to the center.
+    xx, yy, zz = np.meshgrid(
+        np.arange(image_size[0]),
+        np.arange(image_size[1]),
+        np.arange(image_size[2]),
+        indexing="ij",
+    )
+    distance_grid = np.sqrt(
+        (xx - center[0]) ** 2 + (yy - center[1]) ** 2 + (zz - center[2]) ** 2
+    )
 
-    origin = prediction.GetOrigin()
-    spacing = prediction.GetSpacing()
-    direction = prediction.GetDirection()
+    # Get the minimum distance to the center for each connected component.
+    distances = np.array(
+        [distance_grid[labels == (i + 1)].min() for i in range(n_components)]
+    )
 
-    prediction = sitk.GetArrayFromImage(prediction)
+    if len(distances) > 0:
+        central_component_index = np.argmin(distances)
+        prediction = (labels == (central_component_index + 1)).astype(np.uint8)
 
-    c, n = ndi.label(prediction)
-    centroids = np.array(
-        [np.array(np.where(c == i)).mean(axis=1) for i in range(1, n + 1)]
-    ).astype(int)
-
-    patch_size = np.array(list(reversed(PATCH_SIZE)))
-
-    if len(centroids) > 0:
-        dists = np.sqrt(((centroids - patch_size // 2) ** 2).sum(axis=1))
-        keep_idx = np.argmin(dists)
-        output = np.zeros(c.shape)
-        output[c == (keep_idx + 1)] = 1
-        prediction = output.astype(np.uint8)
-
-    prediction = sitk.GetImageFromArray(prediction)
-    prediction.SetSpacing(spacing)
-    prediction.SetOrigin(origin)
-    prediction.SetDirection(direction)
     return prediction

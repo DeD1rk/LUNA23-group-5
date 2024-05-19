@@ -110,16 +110,15 @@ def perform_inference_on_test_set(
         raw_segmentations.append(segmentation)
 
         # apply threshold
-        segmentation = (segmentation > 0.5).astype(np.uint8)
+        threshold_value = 0.5
+        segmentation = (segmentation > threshold_value).astype(np.uint8)
+        segmentation = keep_central_connected_component(segmentation)
 
         # set metadata
         segmentation = sitk.GetImageFromArray(segmentation)
         segmentation.SetOrigin(np.flip(metad["origin"]))
         segmentation.SetSpacing(np.flip(metad["spacing"]))
         segmentation.SetDirection(np.flip(metad["transform"].reshape(-1)))
-
-        # keep central connected component
-        segmentation = keep_central_connected_component(segmentation)
 
         # write as simpleitk image
         sitk.WriteImage(
