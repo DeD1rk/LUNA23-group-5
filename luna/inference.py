@@ -29,8 +29,9 @@ def perform_inference_on_test_set(
     segmentation_save_path.mkdir(exist_ok=True, parents=True)
 
     predictions = []
+    raw_segmentations = []
 
-    for image_path in tqdm(list(test_set_path.glob("*.mha"))):
+    for image_path in tqdm(sorted(list(test_set_path.glob("*.mha")))):
         # load and pre-process input image
         sitk_image = sitk.ReadImage(image_path)
 
@@ -105,6 +106,9 @@ def perform_inference_on_test_set(
                 center[2] - INPUT_SIZE[2] // 2 : center[2] + INPUT_SIZE[2] // 2,
             ]
 
+        # Save segmentation before thresholding.
+        raw_segmentations.append(segmentation)
+
         # apply threshold
         segmentation = (segmentation > 0.5).astype(np.uint8)
 
@@ -145,3 +149,6 @@ def perform_inference_on_test_set(
 
     predictions = pandas.DataFrame(predictions)
     predictions.to_csv(save_path / "predictions.csv", index=False)
+
+    # Save array of all segmentations before thresholding and further postprocessing.
+    np.save(result_dir / "raw_segmentations.npy", raw_segmentations)
