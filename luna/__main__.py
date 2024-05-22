@@ -84,6 +84,16 @@ from .training import Trainer
     type=click.FloatRange(min=0),
     help="Enable data augmentation with normal noise with this STD.",
 )
+@click.option(
+    "--learning-rate",
+    default=1e-4,
+    type=click.FloatRange(min=0),
+)
+@click.option(
+    "--weight-decay",
+    default=0.0,
+    type=click.FloatRange(min=0),
+)
 def train(
     data_dir: Path,
     results_dir: Path,
@@ -99,7 +109,9 @@ def train(
     aug_mirror_x: bool = False,
     aug_mirror_y: bool = False,
     aug_mirror_z: bool = False,
-    aug_noise: float = 0,
+    aug_noise_std: float = 0,
+    learning_rate: float = 1e-4,
+    weight_decay: float = 0.0,
 ):
     date = datetime.now().strftime("%Y%m%d_%H%M")
     save_dir = results_dir / f"{date}_{exp_id or 'default'}_fold{fold}"
@@ -112,12 +124,15 @@ def train(
         epochs=epochs,
         batch_size=batch_size,
         dropout=dropout,
+        learning_rate=learning_rate,
+        weight_decay=weight_decay,
         task_weights={
             "segmentation": segmentation_weight,
             "noduletype": noduletype_weight,
             "malignancy": malignancy_weight,
         },
         augmentation_mirrorings=(aug_mirror_z, aug_mirror_y, aug_mirror_x),
+        augmentation_noise_std=aug_noise_std,
     )
     trainer.train()
 

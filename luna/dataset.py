@@ -150,7 +150,7 @@ class LUNADataset(Dataset):
         if self.noise_std:
             patch = patch + np.random.normal(
                 loc=0, scale=self.noise_std, size=PATCH_SIZE
-            )
+            ).astype(np.float32)
 
         return self.scale_intensity(patch), mask, metadata
 

@@ -24,5 +24,5 @@ python3 -m pip install --user scikit-build
 python3 -m pip install --user -r $HOME/LUNA23-group-5/requirements.txt
 
 # Run training script
-WORKSPACE_PATH=$TMPDIR python3 -u $HOME/LUNA23-group-5/inference.py
+WORKSPACE_PATH=$TMPDIR python3 -u $HOME/LUNA23-group-5/luna-base/inference.py
 cp -r $TMPDIR/results $HOME

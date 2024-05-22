@@ -50,6 +50,8 @@ class Trainer:
             "malignancy": 1.0,
         },
         dropout: float = 0.0,
+        learning_rate: float = 1e-4,
+        weight_decay: float = 0.0,
         augmentation_mirrorings: tuple[bool, bool, bool] = (False, False, False),
         augmentation_noise_std: float = 0.0,
     ):
@@ -67,7 +69,11 @@ class Trainer:
         # self.device = torch.device("cpu:0")
 
         self.model = Model(dropout=dropout).to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=learning_rate,
+            weight_decay=weight_decay,
+        )
 
         dataset_train = LUNADataset(
             self.data_dir,
@@ -86,11 +92,15 @@ class Trainer:
         sampler = WeightedRandomSampler(
             torch.DoubleTensor(
                 get_balancing_weights(dataset_train.dataframe.malignancy.values)
-                * get_balancing_weights(
-                    [
-                        NODULETYPE_MAPPING[t]
-                        for t in dataset_train.dataframe.noduletype.values
-                    ]
+                * (
+                    0.5
+                    * get_balancing_weights(
+                        [
+                            NODULETYPE_MAPPING[t]
+                            for t in dataset_train.dataframe.noduletype.values
+                        ]
+                    )
+                    + 0.5 * np.ones(len(dataset_train))
                 )
             ),
             len(dataset_train),
@@ -101,14 +111,14 @@ class Trainer:
             batch_size=self.batch_size,
             sampler=sampler,
             worker_init_fn=worker_init_fn,
-            num_workers=8,
+            num_workers=12,
         )
 
         self.dataloader_valid = DataLoader(
             dataset=dataset_valid,
             batch_size=self.batch_size,
             worker_init_fn=worker_init_fn,
-            num_workers=4,
+            num_workers=6,
         )
 
     def call_model(self, batch: dict):
@@ -166,6 +176,8 @@ class Trainer:
             self.optimizer.step()
         self.optimizer.zero_grad()
 
+        noduletype_predictions = np.argmax(predictions["noduletype"], axis=1)
+
         return {
             "loss_segmentation": np.mean(losses["segmentation"]),
             "loss_noduletype": np.mean(losses["noduletype"]),
@@ -175,7 +187,10 @@ class Trainer:
                 np.array(labels["malignancy"]), np.array(predictions["malignancy"])
             ),
             "noduletype_balanced_accuracy": skl_metrics.balanced_accuracy_score(
-                labels["noduletype"], [p.argmax() for p in predictions["noduletype"]]
+                labels["noduletype"], noduletype_predictions
+            ),
+            "noduletype_accuracy": skl_metrics.accuracy_score(
+                labels["noduletype"], noduletype_predictions
             ),
             "segmentation_dice": 1 - np.mean(losses["segmentation"]),
         }
@@ -198,6 +213,8 @@ class Trainer:
                 for task, value in batch_labels.items():
                     labels[task].extend(value)
 
+        noduletype_predictions = np.argmax(predictions["noduletype"], axis=1)
+
         return {
             "loss_segmentation": np.mean(losses["segmentation"]),
             "loss_noduletype": np.mean(losses["noduletype"]),
@@ -207,8 +224,10 @@ class Trainer:
                 labels["malignancy"], predictions["malignancy"]
             ),
             "noduletype_balanced_accuracy": skl_metrics.balanced_accuracy_score(
-                labels["noduletype"],
-                [p.argmax() for p in predictions["noduletype"]],
+                labels["noduletype"], noduletype_predictions
+            ),
+            "noduletype_accuracy": skl_metrics.accuracy_score(
+                labels["noduletype"], noduletype_predictions
             ),
             "segmentation_dice": 1 - np.mean(losses["segmentation"]),
         }

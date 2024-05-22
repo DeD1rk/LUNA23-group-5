@@ -65,35 +65,38 @@ class Model(nn.Module):
         self.encoder = nn.ModuleList(
             [
                 # Input shape: (64x64x64 @ 1)
-                ContractionBlock(1, 64, dropout=None, pooling=False),
+                ContractionBlock(1, 32, dropout=None, pooling=False),
+                ContractionBlock(32, 64, dropout=dropout, pooling=True),
                 ContractionBlock(64, 64, dropout=dropout, pooling=True),
                 ContractionBlock(64, 64, dropout=dropout, pooling=True),
-                ContractionBlock(64, 64, dropout=dropout, pooling=True),
-                # Output shape: (8x8x8 @ 64)
+                ContractionBlock(64, 128, dropout=dropout, pooling=True),
+                # Output shape: (4x4x4 @ 128)
             ]
         )
 
         self.decoder = nn.ModuleList(
             [
-                # Input shape: (8x8x8 @ 64)
+                # Input shape: (4x4x4 @ 128)
+                ExpansionBlock(128, 64, dropout=dropout),
                 ExpansionBlock(64, 64, dropout=dropout),
                 ExpansionBlock(64, 64, dropout=dropout),
-                ExpansionBlock(64, 64, dropout=dropout),
-                # Output shape: (64x64x64 @ 64)
+                ExpansionBlock(64, 32, dropout=dropout),
+                # Output shape: (64x64x64 @ 32)
             ]
         )
 
         self.segmentation = nn.Sequential(
-            nn.Conv3d(64, 1, kernel_size=1),
+            nn.Conv3d(32, 1, kernel_size=1),
             nn.Sigmoid(),
         )
 
         self.shared_classification = nn.Sequential(
-            nn.MaxPool3d(2),
-            nn.Conv3d(64, 32, 1),
-            nn.ReLU(),
+            nn.Conv3d(128, 64, kernel_size=1),
+            nn.BatchNorm3d(64, affine=True),
+            nn.Dropout(dropout),
+            nn.ReLU(inplace=True),
             Flatten(),
-            nn.Linear(4 * 4 * 4 * 32, 128),
+            nn.Linear(4 * 4 * 4 * 64, 128),
             nn.Dropout(dropout),
             nn.ReLU(inplace=True),
         )
