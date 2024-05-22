@@ -184,7 +184,7 @@ class Trainer:
 
         noduletype_predictions = np.argmax(predictions["noduletype"], axis=1)
 
-        return {
+        metrics = {
             "loss_segmentation": np.mean(losses["segmentation"]),
             "loss_noduletype": np.mean(losses["noduletype"]),
             "loss_malignancy": np.mean(losses["malignancy"]),
@@ -200,6 +200,14 @@ class Trainer:
             ),
             "segmentation_dice": 1 - np.mean(losses["segmentation"]),
         }
+
+        metrics["overall"] = (
+            0.5 * metrics["malignancy_auc"]
+            + 0.25 * metrics["noduletype_accuracy"]
+            + 0.25 * metrics["segmentation_dice"]
+        )
+
+        return metrics
 
     def validation(self):
         self.model.eval()
@@ -221,7 +229,7 @@ class Trainer:
 
         noduletype_predictions = np.argmax(predictions["noduletype"], axis=1)
 
-        return {
+        metrics = {
             "loss_segmentation": np.mean(losses["segmentation"]),
             "loss_noduletype": np.mean(losses["noduletype"]),
             "loss_malignancy": np.mean(losses["malignancy"]),
@@ -238,9 +246,17 @@ class Trainer:
             "segmentation_dice": 1 - np.mean(losses["segmentation"]),
         }
 
+        metrics["overall"] = (
+            0.5 * metrics["malignancy_auc"]
+            + 0.25 * metrics["noduletype_accuracy"]
+            + 0.25 * metrics["segmentation_dice"]
+        )
+
+        return metrics
+
     def train(self):
         metrics = {"train": [], "valid": []}
-        best_metric = 1e9
+        best_metric = 0
         best_epoch = 0
 
         for epoch in range(self.epochs):
@@ -262,9 +278,9 @@ class Trainer:
             # print(display_metrics.to_markdown(tablefmt="grid"))
             print(epoch_valid_metrics)
 
-            if epoch_valid_metrics["loss_total"] < best_metric:
+            if epoch_valid_metrics["overall"] > best_metric:
                 print("\n===== Saving best model! =====\n")
-                best_metric = epoch_valid_metrics["loss_total"]
+                best_metric = epoch_valid_metrics["overall"]
                 best_epoch = epoch
 
                 torch.save(self.model.state_dict(), self.save_dir / "best_model.pth")
