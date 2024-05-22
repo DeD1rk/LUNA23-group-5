@@ -29,11 +29,17 @@ def dice_loss(input, target):
     """
     smooth = 1.0
 
-    iflat = input.view(-1)
-    tflat = target.view(-1)
-    intersection = (iflat * tflat).sum()
+    iflat = input.view(-1, 64**3)
+    tflat = target.view(-1, 64**3)
+    intersection = (iflat * tflat).sum(dim=1)
 
-    return 1 - ((2.0 * intersection + smooth) / (iflat.sum() + tflat.sum() + smooth))
+    return (
+        1
+        - (
+            (2.0 * intersection + smooth)
+            / (iflat.sum(dim=1) + tflat.sum(dim=1) + smooth)
+        ).mean()
+    )
 
 
 class Trainer:
