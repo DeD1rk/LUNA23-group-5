@@ -93,14 +93,14 @@ class Trainer:
             torch.DoubleTensor(
                 get_balancing_weights(dataset_train.dataframe.malignancy.values)
                 * (
-                    0.5
+                    0.2
                     * get_balancing_weights(
                         [
                             NODULETYPE_MAPPING[t]
                             for t in dataset_train.dataframe.noduletype.values
                         ]
                     )
-                    + 0.5 * np.ones(len(dataset_train))
+                    + 0.8 * np.ones(len(dataset_train))
                 )
             ),
             len(dataset_train),
