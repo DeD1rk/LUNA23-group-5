@@ -1,4 +1,27 @@
 # LUNA23 group 5
+
+## Project description
+The goal of this project is to develop a deep learning model that can do three tasks: segmentation, classification and malignancy prediction of pulmonary nodules. The dataset is provided by the LUNA23 challenge, the test set consists of 687 nodules in the training set and 256 nodules in the testing set. Each nodule in the training set has an associated coordinate, diameter, segmentation, nodule type, and malignancy. The test set only contains the images themselves.
+
+## Sctructure of the project
+The project is structured as follows:
+ - 📁 `dataset`
+    | - 📁 `train_set` 
+    | - 📁 `test_set`
+    └ - 📄 `luna23-ismi-train-set` contains labels and malignacy and location
+ - 📁 `luna` contains all code related to the model
+    | - 📄 `__main__.py` provides CLI to train the model
+    | - 📄 `model.py` contains the model
+    | - 📄 `training.py` contains the training loop
+    | - 📄 `dataset.py` provides interface to the training data
+    | - 📄 `utils.py` utility functions 
+    └ - 📄 `constants.py` constants of the input data
+ - 📁 `results` 
+    | - 📁 `date_ 
+
+
+
+
 # Handige linkjes :)
 1. https://pubs.rsna.org/doi/10.1148/radiol.223308
 "Prior CT Improves Deep Learning for Malignancy Risk Estimation of Screening-detected Pulmonary Nodules"
