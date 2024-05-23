@@ -39,6 +39,7 @@ class LUNADataset(Dataset):
         noise_std: float = 0,
         max_rotation_degrees: float = 0,
         enable_translations: bool = False,
+        enable_scalings: bool = False,
         enable_mirroring: tuple[bool, bool, bool] = (False, False, False),
     ):
         """Create an instance of the dataset.
@@ -59,12 +60,16 @@ class LUNADataset(Dataset):
         a sphere with a radius equal to the nodule's diameter. `enable_mirroring` is a
         tuple of three booleans, each for enabling mirroring along the z (head-toe),
         y (front-back) and x (left-right) axis respectively.
+
+        If `enable_scalings` is True, random scalings (0.8-1.2x zoom per axis) will
+        be applied to the patches.
         """
         self.data_dir = data_dir
         self.fold = fold
         self.validation = validation
 
         self.enable_translations = enable_translations
+        self.enable_scalings = enable_scalings
         self.enable_mirroring = enable_mirroring  # Mirroring flag for each axis.
         self.rotations = (  # Rotation range for each axis.
             [(-max_rotation_degrees, max_rotation_degrees)] * 3
@@ -135,7 +140,6 @@ class LUNADataset(Dataset):
         patch, mask = extract_patch(
             raw_image=image,
             coord=tuple(np.array(INPUT_SIZE) // 2),
-            srcVoxelOrigin=(0, 0, 0),
             srcWorldMatrix=metadata["transform"],
             srcVoxelSpacing=metadata["spacing"],
             mask=segmentation_label,
@@ -143,8 +147,8 @@ class LUNADataset(Dataset):
             voxel_spacing=PATCH_VOXEL_SPACING,
             rotations=self.rotations,
             translations=translations,
+            scalings=([(0.8, 1.2)] * 3) if self.enable_scalings else None,
             mirrorings=self.enable_mirroring,
-            coord_space_world=False,
         )
 
         if self.noise_std:

@@ -48,12 +48,10 @@ def perform_inference_on_test_set(
         image = extract_patch(
             raw_image=image,
             coord=tuple(np.array(INPUT_SIZE) // 2),
-            srcVoxelOrigin=(0, 0, 0),
             srcWorldMatrix=metad["transform"],
             srcVoxelSpacing=metad["spacing"],
             output_shape=PATCH_SIZE,
             voxel_spacing=PATCH_VOXEL_SPACING,
-            coord_space_world=False,
         )
 
         image = image.reshape(1, 1, *PATCH_SIZE).astype(np.float32)

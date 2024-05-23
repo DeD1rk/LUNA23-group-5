@@ -4,11 +4,10 @@ import numpy as np
 import numpy.linalg as npl
 import pandas as pd
 import scipy.ndimage as ndi
-import SimpleITK as sitk
 import torch
 from sklearn.model_selection import StratifiedKFold
 
-from .constants import INPUT_SIZE, PATCH_SIZE, PATCH_VOXEL_SPACING
+from .constants import PATCH_SIZE, PATCH_VOXEL_SPACING
 
 
 def make_development_splits(data_dir: Path, n_folds: int = 5):
@@ -169,15 +168,7 @@ def volumeTransform(
         raise ValueError(
             "Only allowing square transform matrices here, even though this is unneccessary. However, one will need an algorithm here to create full rank-square matrices. 'QR decomposition with Column Pivoting' would probably be a solution, but the author currently does not know what exactly this is, nor how to do this..."
         )
-    #  print (transform_matrix, transform_matrix, np.zeros((transform_matrix.shape[1], image.ndim - transform_matrix.shape[0])))
-    #  transform_matrix = np.hstack((transform_matrix, np.zeros((transform_matrix.shape[1], image.ndim - transform_matrix.shape[0]))))
 
-    # Normalize the transform matrix
-    transform_matrix = np.array(transform_matrix)
-    transform_matrix = (
-        transform_matrix.T
-        / np.sqrt(np.sum(transform_matrix * transform_matrix, axis=1))
-    ).T
     transform_matrix = np.linalg.inv(
         transform_matrix.T
     )  # Important normalization for shearing matrices!!
@@ -247,7 +238,6 @@ def worker_init_fn(worker_id):
 def extract_patch(
     raw_image: np.ndarray,
     coord,
-    srcVoxelOrigin,
     srcWorldMatrix,
     srcVoxelSpacing,
     mask: np.ndarray | None = None,
@@ -255,8 +245,8 @@ def extract_patch(
     voxel_spacing=PATCH_VOXEL_SPACING,
     rotations=None,
     translations=None,
+    scalings=None,
     mirrorings=None,
-    coord_space_world=False,
     offset=np.array([0, 0, 0]),
 ) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
     # Start with the identity linear transformation matrix.
@@ -295,6 +285,18 @@ def extract_patch(
 
         transform_matrix = np.dot(transform_matrix, mirroring_matrix)
 
+    # Apply a random scaling matrix.
+    if scalings is not None:
+        scaling_matrix = np.zeros((3, 3))
+        for axis in range(3):
+            scaling_matrix[axis, axis] = np.random.uniform(
+                low=scalings[axis][0],
+                high=scalings[axis][1],
+            )
+
+        # Apply scaling matrix.
+        transform_matrix = np.dot(transform_matrix, scaling_matrix)
+
     # compute random translation
     if translations is not None:
         # add random translation
@@ -305,22 +307,10 @@ def extract_patch(
     # apply random translation
     coord = np.array(coord) + offset
 
-    thisTransformMatrix = transform_matrix
-    # Normalize transform matrix
-    thisTransformMatrix = (
-        thisTransformMatrix.T
-        / np.sqrt(np.sum(thisTransformMatrix * thisTransformMatrix, axis=1))
-    ).T
-
     invSrcMatrix = np.linalg.inv(srcWorldMatrix)
 
-    # world coord sampling
-    if coord_space_world:
-        overrideCoord = invSrcMatrix.dot(coord - srcVoxelOrigin)
-    else:
-        # image coord sampling
-        overrideCoord = coord * srcVoxelSpacing
-    overrideMatrix = (invSrcMatrix.dot(thisTransformMatrix.T) * srcVoxelSpacing).T
+    overrideCoord = coord * srcVoxelSpacing
+    overrideMatrix = (invSrcMatrix.dot(transform_matrix.T) * srcVoxelSpacing).T
 
     patch = volumeTransform(
         raw_image,
@@ -331,6 +321,14 @@ def extract_patch(
         output_voxel_spacing=np.array(voxel_spacing),
         order=1,
         prefilter=False,
+        # In some cases, due to rotation, translation and scaling, combined with a
+        # small source voxel spacing on the shortest axis, the transformation may
+        # partially sample outside of the input image. In that case, we want to pad
+        # the patch with black pixels, as is done in some input images as well.
+        # We set the padding to a value lower than the minimum HU
+        # value in images, so that it will certainly be clipped to 0.
+        mode="constant",
+        cval=-10_000,
     )
     patch = np.expand_dims(patch, axis=0)
 
