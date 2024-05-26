@@ -169,6 +169,11 @@ def volumeTransform(
             "Only allowing square transform matrices here, even though this is unneccessary. However, one will need an algorithm here to create full rank-square matrices. 'QR decomposition with Column Pivoting' would probably be a solution, but the author currently does not know what exactly this is, nor how to do this..."
         )
 
+    transform_matrix = np.array(transform_matrix)
+    transform_matrix = (
+        transform_matrix.T
+        / np.sqrt(np.sum(transform_matrix * transform_matrix, axis=1))
+    ).T
     transform_matrix = np.linalg.inv(
         transform_matrix.T
     )  # Important normalization for shearing matrices!!
@@ -285,17 +290,13 @@ def extract_patch(
 
         transform_matrix = np.dot(transform_matrix, mirroring_matrix)
 
-    # Apply a random scaling matrix.
+    # Apply a random scaling.
+    voxel_spacing = np.array(voxel_spacing)
     if scalings is not None:
-        scaling_matrix = np.zeros((3, 3))
-        for axis in range(3):
-            scaling_matrix[axis, axis] = np.random.uniform(
-                low=scalings[axis][0],
-                high=scalings[axis][1],
-            )
-
-        # Apply scaling matrix.
-        transform_matrix = np.dot(transform_matrix, scaling_matrix)
+        voxel_spacing *= np.random.uniform(
+            low=np.array([scalings[axis][0] for axis in range(3)]),
+            high=np.array([scalings[axis][1] for axis in range(3)]),
+        )
 
     # compute random translation
     if translations is not None:

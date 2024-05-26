@@ -116,7 +116,7 @@ def train(
     aug_mirror_y: bool = False,
     aug_mirror_z: bool = False,
     aug_noise_std: float = 0,
-    aug_scalings: bool = False,
+    aug_scaling: bool = False,
     learning_rate: float = 1e-4,
     weight_decay: float = 0.0,
 ):
@@ -140,7 +140,7 @@ def train(
         },
         augmentation_mirrorings=(aug_mirror_z, aug_mirror_y, aug_mirror_x),
         augmentation_noise_std=aug_noise_std,
-        augmentation_scalings=aug_scalings,
+        augmentation_scaling=aug_scaling,
     )
     trainer.train()
 
