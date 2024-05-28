@@ -30,7 +30,7 @@ if [ $? -ne 0 ]; then
 fi
 # If the download was successful, unzip the dataset
 # Unzip the dataset
-unzip dataset.zip -d data
+unzip dataset.zip -d dataset
 
 # Check if the unzip was successful 
 if [ $? -ne 0 ]; then

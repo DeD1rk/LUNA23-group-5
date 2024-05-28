@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from .inference import perform_inference_on_test_set
+from .process import perform_inference_on_one_sample
 from .training import Trainer
 
 
@@ -176,6 +177,10 @@ def inference(data_dir: Path, result_dir: Path, dropout: float = 0.0):
     )
 
 
+def proces(dropout: float = 0.3, checkpoint_name: str = "best-model"):
+    perform_inference_on_one_sample(dropout=dropout, checkpoint_name=checkpoint_name)
+
+
 @click.group()
 def cli():
     pass
@@ -183,6 +188,7 @@ def cli():
 
 cli.add_command(train)
 cli.add_command(inference)
+cli.add_command(proces)
 
 if __name__ == "__main__":
     cli()
