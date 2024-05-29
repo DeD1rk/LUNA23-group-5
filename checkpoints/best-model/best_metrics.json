@@ -1,11 +1,11 @@
 {
-    "loss_segmentation": 0.26242177353964913,
-    "loss_noduletype": 0.8238276176982455,
-    "loss_malignancy": 0.3372192345559597,
-    "loss_total": 1.4234686295191448,
-    "malignancy_auc": 0.9648148148148148,
-    "noduletype_balanced_accuracy": 0.6983477970627503,
-    "noduletype_accuracy": 0.927536231884058,
-    "segmentation_dice": 0.7375782264603509,
-    "overall": 0.8986860219935097
+    "loss_segmentation": 0.3225676682260301,
+    "loss_noduletype": 0.8471496899922689,
+    "loss_malignancy": 0.1457720309909847,
+    "loss_total": 1.315489371617635,
+    "malignancy_auc": 0.9832548403976976,
+    "noduletype_balanced_accuracy": 0.6767364657814096,
+    "noduletype_accuracy": 0.8978102189781022,
+    "segmentation_dice": 0.6774323317739699,
+    "overall": 0.8854380578868668
 }
