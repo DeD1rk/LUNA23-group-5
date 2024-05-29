@@ -5,6 +5,8 @@ The goal of this project is to develop a deep learning model that can do three t
 
 ## Sctructure of the project
 The project is structured as follows:
+
+```
  - 📁 `checkpoints` contains the best model checkpoint
  - 📁 `dataset`
     | - 📁 `train_set` 
@@ -29,7 +31,7 @@ The project is structured as follows:
  - 📄 `requirements.txt` contains all dependencies for development
  - 📄 `requirements-container.txt` contains all dependencies for inference
  - 📄 `README.md` this file
-
+```
 
 ## Usage
 
@@ -82,4 +84,13 @@ Exporting the container to a `.tar.gz` file can be done with the following comma
 
 Download the exported container from [surf](https://filesender.surf.nl/?s=download&token=9da18c49-9cef-4b3f-80a5-24efe54d1efa).
 
+## Multi-task model
 
+The model in this code is a multi-task model that combines a 3D U-net with a part for nodule type classification and malignancy prediction. The model architecture is as follows:
+
+Losses are combined by weighted sum: $$\mathcal{L}_{total} = w_{seg} \cdot \mathcal{L}_{seg} + w_{type} \cdot \mathcal{L}_{type} + w_{mal} \cdot \mathcal{L}_{mal}$$.
+Experimentation shows that having equal weights for all tasks works well.
+
+A high-level overview of the model can be seen below.
+
+![Model Architecture](model.drawio.pdf)
