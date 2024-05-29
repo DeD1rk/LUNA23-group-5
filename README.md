@@ -6,32 +6,30 @@ The goal of this project is to develop a deep learning model that can do three t
 ## Sctructure of the project
 The project is structured as follows:
 
-```
  - 📁 `checkpoints` contains the best model checkpoint
  - 📁 `dataset`
-    | - 📁 `train_set` 
-    | - 📁 `test_set`
-    └ - 📄 `luna23-ismi-train-set` contains labels and metadata
+   -  | - 📁 `train_set` 
+   - | - 📁 `test_set`
+   - └ - 📄 `luna23-ismi-train-set` contains labels and metadata
  - 📁 `luna` contains all code related to the model
-    | - 📄 `__main__.py` provides a CLI to train the model
-    | - 📄 `model.py` contains the model
-    | - 📄 `training.py` contains the training loop
-    | - 📄 `dataset.py` provides interface to the training data
-    | - 📄 `utils.py` utility functions 
-    └ - 📄 `constants.py` constant settings and facts about input data
+   - | - 📄 `__main__.py` provides a CLI to train the model
+   - | - 📄 `model.py` contains the model
+   - | - 📄 `training.py` contains the training loop
+   - | - 📄 `dataset.py` provides interface to the training data
+   - | - 📄 `utils.py` utility functions 
+   - └ - 📄 `constants.py` constant settings and facts about input data
  - 📁 `notebooks` varies notebooks for visualization of training and model output
  - 📁 `scripts` contain scripts to train and build the container
-    | - 📄 `train.sh` trains the model with sbatch
-    | - 📄 `get_dataset.sh` downloads the dataset from surf  
-    | - 📄 `build_container.sh` builds the container
-    | - 📄 `test_container.sh` tests the container
-    └ - 📄 `export_container.sh` exports noduleanalyzer container to a `.tar.gz` 
+   - | - 📄 `train.sh` trains the model with sbatch
+   - | - 📄 `get_dataset.sh` downloads the dataset from surf  
+   - | - 📄 `build_container.sh` builds the container
+   - | - 📄 `test_container.sh` tests the container
+   - └ - 📄 `export_container.sh` exports noduleanalyzer container to a `.tar.gz` 
  - 📁 `test` contains in- output for container testing
  - 📄 `Dockerfile` Instructions to create container
  - 📄 `requirements.txt` contains all dependencies for development
  - 📄 `requirements-container.txt` contains all dependencies for inference
  - 📄 `README.md` this file
-```
 
 ## Usage
 
