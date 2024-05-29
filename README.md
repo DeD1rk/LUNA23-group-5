@@ -92,4 +92,4 @@ Experimentation shows that having equal weights for all tasks works well.
 
 A high-level overview of the model can be seen below.
 
-![Model Architecture](model.drawio.pdf)
+![Model Architecture](model.drawio.png)
