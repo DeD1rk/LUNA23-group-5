@@ -5,6 +5,7 @@ The goal of this project is to develop a deep learning model that can do three t
 
 ## Sctructure of the project
 The project is structured as follows:
+ - 📁 `checkpoints` contains the best model checkpoint
  - 📁 `dataset`
     | - 📁 `train_set` 
     | - 📁 `test_set`
@@ -16,7 +17,18 @@ The project is structured as follows:
     | - 📄 `dataset.py` provides interface to the training data
     | - 📄 `utils.py` utility functions 
     └ - 📄 `constants.py` constant settings and facts about input data
- - 📁 `results/<date>_<time>_<exp-id>_fold<fold>/...` outputs from training
+ - 📁 `notebooks` varies notebooks for visualization of training and model output
+ - 📁 `scripts` contain scripts to train and build the container
+    | - 📄 `train.sh` trains the model with sbatch
+    | - 📄 `get_dataset.sh` downloads the dataset from surf  
+    | - 📄 `build_container.sh` builds the container
+    | - 📄 `test_container.sh` tests the container
+    └ - 📄 `export_container.sh` exports noduleanalyzer container to a `.tar.gz` 
+ - 📁 `test` contains in- output for container testing
+ - 📄 `Dockerfile` Instructions to create container
+ - 📄 `requirements.txt` contains all dependencies for development
+ - 📄 `requirements-container.txt` contains all dependencies for inference
+ - 📄 `README.md` this file
 
 
 ## Usage
@@ -62,5 +74,12 @@ To test if the container is working properly, we can run the following command:
 ```bash
 ./scripts/test_container.sh
 ```
+Exporting the container to a `.tar.gz` file can be done with the following command:
+
+```bash
+./scripts/export_container.sh
+```
+
+Download the exported container from [surf](https://filesender.surf.nl/?s=download&token=9da18c49-9cef-4b3f-80a5-24efe54d1efa).
 
 

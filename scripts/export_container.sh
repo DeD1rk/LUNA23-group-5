@@ -2,4 +2,6 @@
 
 ./scripts/build_container.sh
 
-docker save noduleanalyzer | gzip -c > NoduleAnalyzer.tar.gz
+echo "Exporting container to NoduleAnalyzer.tar.gz"
+
+docker save noduleanalyzer:latest | gzip -c --verbose > NoduleAnalyzer.tar.gz

@@ -8,4 +8,4 @@ if [ ! -f Dockerfile ]; then
 fi
 
 #docker build -t noduleanalyzer "$SCRIPTPATH"
-docker buildx build -t noduleanalyzer:validation . 
+docker buildx build -t noduleanalyzer:latest . 
