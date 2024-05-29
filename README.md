@@ -87,7 +87,7 @@ Download the exported container from [surf](https://filesender.surf.nl/?s=downlo
 
 The model in this code is a multi-task model that combines a 3D U-net with a part for nodule type classification and malignancy prediction. The model architecture is as follows:
 
-Losses are combined by weighted sum: $\mathcal{L}_{total} = w_{seg} \cdot \mathcal{L}_{seg} + w_{type} \cdot \mathcal{L}_{type} + w_{mal} \cdot \mathcal{L}_{mal}$.
+Losses are combined by weighted sum: $`\mathcal{L}_{total} = w_{seg} \cdot \mathcal{L}_{seg} + w_{type} \cdot \mathcal{L}_{type} + w_{mal} \cdot \mathcal{L}_{mal}`$.
 Experimentation shows that having equal weights for all tasks works well.
 
 A high-level overview of the model can be seen below.
