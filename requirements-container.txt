@@ -1,0 +1,8 @@
+SimpleITK
+numpy
+scipy
+pandas
+torch
+torchvision
+scikit-learn
+click

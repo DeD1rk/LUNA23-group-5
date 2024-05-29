@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-./scripts/build-container.sh
+./scripts/build_container.sh
 
 #Change the ownership of the input and output directories allow the container to write to them
-chmod 777 -R ./test/input
-chmod 777 -R ./test/expected_output
+chmod 777 ./test/input
+chmod 777 ./test/expected_output
+
 
 VOLUME_SUFFIX=$(dd if=/dev/urandom bs=32 count=1 | md5sum | cut --delimiter=' ' --fields=1)
 MEM_LIMIT="4g"  # Maximum is currently 30g, configurable in your algorithm image settings on grand challenge

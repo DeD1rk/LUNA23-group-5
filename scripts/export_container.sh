@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-./scripts/build.sh
+./scripts/build_container.sh
 
 docker save noduleanalyzer | gzip -c > NoduleAnalyzer.tar.gz
